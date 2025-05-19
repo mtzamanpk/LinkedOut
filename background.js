@@ -29,8 +29,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Make the actual API call
     async function rewriteTextWithGemini() {
       try {
-        const prompt = `Rewrite the following LinkedIn post to be much simpler and easier to understand, as if explaining it to a 5-year-old. Keep the core message intact but use very basic vocabulary. Original post: "${text}"`;
-        console.log(`[Background] Sending prompt to Gemini for ${postId}: "${prompt.substring(0,150)}..."`);
+        const prompt = `Rewrite the following LinkedIn post using extremely simple words, like you're talking to a very young child who knows very few words. Make sentences very short. Use the absolute simplest vocabulary possible. Focus only on the main idea. Original post: "${text}"`;
+        console.log(`[Background] Sending prompt to Gemini for ${postId}: "${prompt.substring(0, 200)}..."`);
         
         const result = await model.generateContent(prompt);
         const responseFromAPI = result.response;
