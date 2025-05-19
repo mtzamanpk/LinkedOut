@@ -14,44 +14,60 @@ function findAndProcessPosts() {
   console.log(`Found ${postElements.length} potential post(s) with current container selector.`);
 
   postElements.forEach((postElement, index) => {
+    console.log(`[Loop Start] Processing post container #${index + 1}. Element:`, postElement);
+
     // Create a unique ID for the post if it doesn't have one, or use an existing stable attribute
     // For now, we'll rely on the element reference for the Set, but a stable ID is better.
     if (processedPosts.has(postElement)) {
+      console.log(`[Loop Skip] Post container #${index + 1} already processed or being processed.`);
       return; // Skip already processed posts
     }
 
     const textElement = postElement.querySelector(POST_TEXT_SELECTOR);
+    console.log(`[Debug] Post #${index + 1}: textElement (using "${POST_TEXT_SELECTOR}"):`, textElement);
 
     if (textElement) {
-      const originalText = textElement.innerText;
-      console.log(`Processing post ${index + 1} text: "${originalText.substring(0, 100)}..."`);
+      console.log(`[Debug] Post #${index + 1}: textElement.innerText: "${textElement.innerText}"`);
+      const originalText = textElement.innerText.trim();
+      console.log(`[Debug] Post #${index + 1}: originalText (after trim): "${originalText}"`);
+      console.log(`[Debug] Post #${index + 1}: typeof originalText: ${typeof originalText}, length: ${originalText.length}`);
 
-      // Mark as processing to avoid race conditions if observer fires quickly
-      processedPosts.add(postElement); 
+      if (originalText && originalText.length > 0) {
+        console.log(`Processing post ${index + 1} text: "${originalText.substring(0, 100)}..."`);
 
-      // Send the text to the background script for rewriting
-      chrome.runtime.sendMessage({ type: 'rewriteText', text: originalText, postId: `post-${index}` }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Error sending message to background:', chrome.runtime.lastError.message);
-          processedPosts.delete(postElement); // Allow reprocessing if sending failed
-          return;
-        }
-        if (response && response.rewrittenText) {
-          console.log(`Rewritten text for post-${index}: "${response.rewrittenText.substring(0, 100)}..."`);
-          // TODO: Implement DOM manipulation to display the rewritten text
-          // For example, replace the content of textElement or add a new element
-          // textElement.innerText = response.rewrittenText; // Simple replacement for now
-          const newTextNode = document.createTextNode(` (DumbedIn: ${response.rewrittenText})`);
-          textElement.parentNode.insertBefore(newTextNode, textElement.nextSibling);
+        // Send the text to the background script for rewriting
+        processedPosts.add(postElement); // Mark as processing to avoid race conditions if observer fires quickly
+        const postId = `post-${index}`;
+        console.log(`[Content] Attempting to send message for ${postId}...`);
+        chrome.runtime.sendMessage({ type: 'rewriteText', text: originalText, postId: postId }, (response) => {
+          // Check for errors when the response is received (or not received)
+          if (chrome.runtime.lastError) {
+            console.error(`[Content] Error receiving response for ${postId}:`, chrome.runtime.lastError.message);
+            // Optionally remove from processedPosts to allow reprocessing if sending/response failed
+            // processedPosts.delete(postElement); 
+            return;
+          }
+          
+          console.log(`[Content] Received response for ${postId}:`, response);
+          if (response && response.rewrittenText) {
+            console.log(`[Content] Rewritten text for ${response.originalPostId}: "${response.rewrittenText.substring(0, 100)}..."`);
+            // TODO: Implement DOM manipulation to display the rewritten text
+            // For example, replace the content of textElement or add a new element
+            // textElement.innerText = response.rewrittenText; // Simple replacement for now
+            const newTextNode = document.createTextNode(` (DumbedIn: ${response.rewrittenText})`);
+            textElement.parentNode.insertBefore(newTextNode, textElement.nextSibling);
 
-        } else {
-          console.log(`No response or no rewritten text for post-${index}`);
-          // If no rewrite, perhaps remove from processed if we want to retry later under different conditions
-          // For now, we keep it in processedPosts to avoid repeatedly trying to rewrite something that failed.
-        }
-      });
+          } else {
+            console.log(`[Content] No response or no rewritten text for ${response ? response.originalPostId : postId}`);
+          }
+        });
+        console.log(`[Content] Message sent for ${postId} (or at least, the call to sendMessage was made).`);
+
+      } else {
+        console.log(`Post ${index + 1}: Found text element with selector "${POST_TEXT_SELECTOR}", but it is empty or contains only whitespace.`);
+      }
     } else {
-      console.log(`Post ${index + 1} does not contain the text selector "${POST_TEXT_SELECTOR}" or is empty.`);
+      console.log(`Post ${index + 1}: Text element with selector "${POST_TEXT_SELECTOR}" NOT FOUND within this post container.`);
     }
   });
 }
