@@ -4,7 +4,9 @@
   "description": "",
   "main": "background.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,14 @@
   "bugs": {
     "url": "https://github.com/mtzamanpk/LinkedOut/issues"
   },
-  "homepage": "https://github.com/mtzamanpk/LinkedOut#readme"
+  "homepage": "https://github.com/mtzamanpk/LinkedOut#readme",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.5",
+    "vite": "^6.3.4"
+  }
 }

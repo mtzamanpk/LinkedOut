@@ -4,13 +4,13 @@
   "version": "0.1.0",
   "description": "Rewrites LinkedIn posts into simpler, more casual language using the Gemini API.",
   "permissions": [
-    "storage",      // For saving settings, API key, feedback
-    "activeTab",    // To interact with the current LinkedIn tab
-    "scripting",    // To inject content scripts
-    "contextMenus"  // For right-click menu option
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
-    "*://*.linkedin.com/*" // To run content scripts on LinkedIn
+    "*://*.linkedin.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,16 +22,6 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "default_popup": "popup.html"
   }
 }
