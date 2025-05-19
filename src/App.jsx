@@ -1,96 +1,61 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import './App.css'; // We'll create this next
 
 function App() {
-  // State for text areas
-  const [originalText, setOriginalText] = useState('');
-  const [rewrittenText, setRewrittenText] = useState('');
+  // Default to 'rewritten' as content.js now shows rewritten text by default
+  const [currentMode, setCurrentMode] = useState('rewritten'); 
 
-  // State for controls
-  const [simplificationLevel, setSimplificationLevel] = useState('Medium');
-  const [isDumbifyOn, setIsDumbifyOn] = useState(false);
-  const [fillerFrequency, setFillerFrequency] = useState('Rare');
-
-  // Placeholder handlers (will be implemented later)
-  const handleRewrite = () => {
-    console.log('Rewrite triggered with settings:', {
-      originalText,
-      simplificationLevel,
-      isDumbifyOn,
-      fillerFrequency,
+  // Load initial mode from storage when popup opens
+  useEffect(() => {
+    chrome.storage.local.get(['displayMode'], (result) => {
+      if (result.displayMode) {
+        setCurrentMode(result.displayMode);
+        // Ensure content script is also in sync if popup is reopened
+        // This is a bit redundant if content.js always starts in rewritten,
+        // but good for consistency if that default changes.
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].id) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: 'SET_DISPLAY_MODE', mode: result.displayMode });
+            }
+        });
+      }
     });
-    // TODO: Get text from content script, call API, update rewrittenText
-    setRewrittenText('// Rewritten text will appear here... (API call needed)');
-  };
+  }, []); // Empty dependency array means this runs once when the component mounts
 
-  const handleApply = () => {
-    console.log('Apply clicked');
-    // TODO: Send rewrittenText to content script to update editor
-  };
+  const handleToggleMode = () => {
+    const newMode = currentMode === 'original' ? 'rewritten' : 'original';
+    setCurrentMode(newMode);
+    chrome.storage.local.set({ displayMode: newMode }); // Save preference
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(rewrittenText)
-      .then(() => console.log('Copied to clipboard'))
-      .catch(err => console.error('Failed to copy:', err));
+    // Send message to content script
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0] && tabs[0].id) {
+        chrome.tabs.sendMessage(
+          tabs[0].id,
+          { type: 'SET_DISPLAY_MODE', mode: newMode },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.error('Error sending SET_DISPLAY_MODE message:', chrome.runtime.lastError.message);
+            } else {
+              console.log('Popup: Display mode message sent, response:', response);
+            }
+          }
+        );
+      } else {
+        console.error("Popup: Could not find active tab to send message.");
+      }
+    });
   };
 
   return (
-    <div className="container">
-      <h1>Simplify & Dumb-Down</h1>
-
-      <div className="text-areas">
-        <label htmlFor="original">Original Text:</label>
-        <textarea
-          id="original"
-          value={originalText}
-          onChange={(e) => setOriginalText(e.target.value)}
-          placeholder="Paste or type LinkedIn post here..."
-        />
-        <label htmlFor="rewritten">Rewritten Text:</label>
-        <textarea
-          id="rewritten"
-          value={rewrittenText}
-          readOnly // Rewritten text comes from API
-          placeholder="Simplified text will appear here..."
-        />
-      </div>
-
-      <div className="controls">
-        <label htmlFor="level">
-          Simplification Level:
-          <select id="level" value={simplificationLevel} onChange={(e) => setSimplificationLevel(e.target.value)}>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
-        </label>
-
-        <label htmlFor="dumbify">
-          Dumbify Toggle:
-          <input
-            id="dumbify"
-            type="checkbox"
-            checked={isDumbifyOn}
-            onChange={(e) => setIsDumbifyOn(e.target.checked)}
-          />
-        </label>
-
-        <label htmlFor="filler">
-          Filler Frequency:
-          <select id="filler" value={fillerFrequency} onChange={(e) => setFillerFrequency(e.target.value)}>
-            <option value="None">None</option>
-            <option value="Rare">Rare</option>
-            <option value="Frequent">Frequent</option>
-          </select>
-        </label>
-      </div>
-
-       {/* Button to trigger the rewrite - might replace with live updates later */}
-       <button onClick={handleRewrite}>Rewrite Text</button>
-
-      <div className="actions">
-        <button onClick={handleApply}>Apply</button>
-        <button onClick={handleCopy}>Copy</button>
-      </div>
+    <div className="app-container">
+      <h1>DumbedIn Toggle</h1>
+      <button onClick={handleToggleMode} className="toggle-button">
+        Show {currentMode === 'original' ? 'Simplified Text' : 'Original Text'}
+      </button>
+      <p className="current-mode-text">
+        Currently displaying: {currentMode === 'original' ? 'Original LinkedIn Posts' : 'Simplified (DumbedDown) Posts'}
+      </p>
     </div>
   );
 }

@@ -10,7 +10,7 @@ if (!apiKey) {
 
 // Initialize the GoogleGenerativeAI client with the API key
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-pro"}); // Or your preferred model
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest"}); // Or your preferred model
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('[Background] Message received:', request);

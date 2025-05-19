@@ -51,14 +51,27 @@ function findAndProcessPosts() {
           console.log(`[Content] Received response for ${postId}:`, response);
           if (response && response.rewrittenText) {
             console.log(`[Content] Rewritten text for ${response.originalPostId}: "${response.rewrittenText.substring(0, 100)}..."`);
-            // TODO: Implement DOM manipulation to display the rewritten text
-            // For example, replace the content of textElement or add a new element
-            // textElement.innerText = response.rewrittenText; // Simple replacement for now
-            const newTextNode = document.createTextNode(` (DumbedIn: ${response.rewrittenText})`);
-            textElement.parentNode.insertBefore(newTextNode, textElement.nextSibling);
+            
+            // Store original text if not already stored, and mark as processed
+            if (!textElement.dataset.originalText) {
+              textElement.dataset.originalText = originalText; // originalText from the outer scope
+            }
+            textElement.dataset.rewrittenText = response.rewrittenText;
+            textElement.classList.add('dumbedin-processed');
+
+            // Display rewritten text by default (or based on a stored preference later)
+            textElement.innerText = response.rewrittenText;
 
           } else {
             console.log(`[Content] No response or no rewritten text for ${response ? response.originalPostId : postId}`);
+            if (response && response.error) {
+              // Optionally, display a small error indicator if rewriting failed
+              if (!textElement.dataset.originalText) { // Ensure original is still there
+                textElement.dataset.originalText = originalText;
+              }
+              textElement.classList.add('dumbedin-processed', 'dumbedin-error');
+              // textElement.innerText = textElement.dataset.originalText + " (Rewrite Error)"; // Or keep original
+            }
           }
         });
         console.log(`[Content] Message sent for ${postId} (or at least, the call to sendMessage was made).`);
@@ -72,25 +85,53 @@ function findAndProcessPosts() {
   });
 }
 
-// Initial scan
-findAndProcessPosts();
-
-// Observe DOM changes to detect new posts (e.g., infinite scroll)
-const observer = new MutationObserver((mutationsList, observer) => {
-  // For simplicity, re-scan for posts on any significant DOM change in the body.
-  // More specific observation targets could improve performance.
-  for (const mutation of mutationsList) {
-    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-      // Check if added nodes could be new posts or containers of posts
-      // A more sophisticated check could look at the class/structure of addedNodes
-      console.log('DOM changed, checking for new posts...');
-      findAndProcessPosts();
-      break; // No need to check other mutations if we already decided to re-scan
-    }
+// Listen for messages from the popup to change display mode
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'SET_DISPLAY_MODE') {
+    console.log(`[Content] Received SET_DISPLAY_MODE request:`, request.mode);
+    const processedElements = document.querySelectorAll('.dumbedin-processed');
+    processedElements.forEach(element => {
+      if (request.mode === 'original') {
+        if (element.dataset.originalText) {
+          element.innerText = element.dataset.originalText;
+        }
+      } else if (request.mode === 'rewritten') {
+        if (element.dataset.rewrittenText) {
+          element.innerText = element.dataset.rewrittenText;
+        } else if (element.classList.contains('dumbedin-error') && element.dataset.originalText) {
+          // If error and trying to show rewritten, show original with error or just original
+          element.innerText = element.dataset.originalText + " (Rewrite N/A)";
+        }
+      }
+    });
+    sendResponse({ status: 'Display mode updated', mode: request.mode });
+    return true; // Indicate async response if needed, though this is sync for now
   }
 });
 
-// Start observing the document body for added nodes
-observer.observe(document.body, { childList: true, subtree: true });
+function setupObserver() {
+  // Observe DOM changes to detect new posts (e.g., infinite scroll)
+  const observer = new MutationObserver((mutationsList, observer) => {
+    // For simplicity, re-scan for posts on any significant DOM change in the body.
+    // More specific observation targets could improve performance.
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        // Check if added nodes could be new posts or containers of posts
+        // A more sophisticated check could look at the class/structure of addedNodes
+        console.log('DOM changed, checking for new posts...');
+        findAndProcessPosts();
+        break; // No need to check other mutations if we already decided to re-scan
+      }
+    }
+  });
+
+  // Start observing the document body for added nodes
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Initial scan
+findAndProcessPosts();
+// Set up the observer for dynamic content
+setupObserver();
 
 console.log('DumbedIn Content Script Setup Complete.');
