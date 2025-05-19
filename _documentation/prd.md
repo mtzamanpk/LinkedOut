@@ -2,12 +2,12 @@
 
 ## Project Overview  
 **Name:** Simplify & Dumb-Down LinkedIn Post Rewriter Extension  
-**Description:** A solo-built React-based browser extension that ingests LinkedIn post content and automatically rewrites it into simpler vocabulary, shorter sentences, and a lightly “dumber” tone—ideal for conveying information in a casual, laid-back style.
+**Description:** A solo-built React-based browser extension that **automatically detects LinkedIn posts, rewrites them in-place** into simpler vocabulary, shorter sentences, and a lightly “dumber” tone using the Gemini API, and **displays the rewritten content directly within the LinkedIn feed as an overlay or replacement.**
 
 ---
 
 ## 1. Goals & Objectives  
-- **Primary Goal:** Allow a single developer to build and ship a React-based extension that transforms professional‐sounding LinkedIn posts into an intentionally simplified, casual tone.  
+- **Primary Goal:** Allow a single developer to build and ship a React-based extension that **seamlessly integrates with the LinkedIn feed to automatically transform** professional‐sounding posts into an intentionally simplified, casual tone, **modifying the displayed content directly.**  
 - **Objectives:**  
   1. **Accuracy:** Preserve original meaning and key takeaways.  
   2. **Simplicity:** Reduce average sentence length by ~30%.  
@@ -30,7 +30,7 @@
 ## 3. Functional Requirements  
 
 1. **Content Extraction**  
-   - Detect LinkedIn post text within the page DOM.  
+   - **Automatically detect LinkedIn post text within the page DOM as the user scrolls or navigates.**  
    - Trigger via extension icon click or right-click menu.
 
 2. **Rewrite Engine (Gemini API)**  
@@ -40,17 +40,18 @@
    - Handle API errors and rate limits gracefully.
 
 3. **User Controls & Settings**  
-   - **Simplification Level:** Low / Medium / High.  
-   - **Dumbify Toggle:** On / Off.  
-   - **Filler Frequency:** None / Rare / Frequent.  
-   - **Preview Pane:** Side-by-side original vs. rewritten, implemented as a React component.
+   - **Simplification Level:** Low / Medium / High (configurable in settings).  
+   - **Dumbify Toggle:** On / Off (configurable in settings).  
+   - **Filler Frequency:** None / Rare / Frequent (configurable in settings).  
+   - **Rewritten Display:** Rewritten posts are displayed directly on the page. An optional, toggleable React-powered overlay/element may show a side-by-side original vs. rewritten comparison for individual posts, or provide quick actions.
 
 4. **Output Integration**  
-   - Overwrite LinkedIn editor in-place.  
-   - Copy rewritten text to clipboard.
+   - **Primarily, directly replace or overlay original post content in the LinkedIn feed with the rewritten version.**  
+   - **Options to view original text, copy rewritten text, or report a poor rewrite should be available per post.**
+   - Functionality to apply rewrites to the LinkedIn post editor (when composing a post) may be a secondary feature.
 
 5. **Feedback & Analytics**  
-   - In-extension button to log poor rewrites (local storage).  
+   - In-extension button/mechanism (e.g., on the rewritten post overlay) to log poor rewrites (local storage).  
    - Optional anonymous telemetry: request latency, settings usage (with user consent).
 
 ---
@@ -71,17 +72,18 @@
 ## 5. UX/UI & Interaction Flows  
 
 1. **Install & Onboarding**  
-   - Install from browser store → modal explains “what data is sent” and privacy settings.
+   - Install from browser store → modal explains “what data is sent,” privacy settings, and how the automatic rewriting works.
 
-2. **Rewriting a Post**  
-   - Click extension icon or right-click → “Simplify & Dumb-Down.”  
-   - React-powered sidebar shows original vs. new text.  
-   - Adjust sliders/toggles → live preview via Gemini API calls.  
-   - Click “Apply” or “Copy.”
+2. **Rewriting a Post (Automatic In-Feed)**  
+   - **As the user browses their LinkedIn feed, the extension automatically detects posts.**  
+   - **Post content is sent to the Gemini API for rewriting based on current user settings.**  
+   - **The original post text in the feed is replaced by (or overlaid with) the rewritten version.**  
+   - **Users may have an option (e.g., a small icon or minimal UI element on/near the post) to view original text, copy the rewritten text, or report a poor rewrite.**
+   - Adjusting simplification sliders/toggles for an *already rewritten post* might require interaction with an injected UI element or redirect to the main settings panel.
 
 3. **Settings Panel**  
-   - Accessible via icon menu.  
-   - Controls for default simplification, “dumbify,” filler frequency, telemetry opt-in/out, and “Reset.”
+   - Accessible via the browser extension icon (the popup UI can serve as this settings panel).
+   - Controls for default simplification, “dumbify,” filler frequency, telemetry opt-in/out, API key input (if needed), and “Reset.”
 
 ---
 
